@@ -14,6 +14,7 @@ public class Game : MonoBehaviour
 
     // Testing
     private bool finishTestRuns = false;
+    private int handsPlayed = 0;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -43,6 +44,7 @@ public class Game : MonoBehaviour
             if (player.HandRank.Type == HandType.Quads)
             {
                 Debug.Log($"Player {player.Name} has Quads.");
+                Debug.Log($"{handsPlayed} hands were played.");
                 finishTestRuns = true;
             }
         }
@@ -116,6 +118,7 @@ public class Game : MonoBehaviour
             Debug.Log($"{player.Name}'s hole cards are {string.Join(", ", player.HoleCards)}");
         }
 
+        handsPlayed++;
         DetermineHands();
     }
 }
