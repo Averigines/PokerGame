@@ -2,6 +2,7 @@ namespace Model
 {
     public enum CardSuit
     {
+        None = 0,
         Clubs,
         Diamonds,
         Spades,
@@ -10,7 +11,8 @@ namespace Model
 
     public enum CardRank
     {
-        Two,
+        None = 0,
+        Two = 2,
         Three,
         Four,
         Five,
@@ -25,7 +27,7 @@ namespace Model
         Ace
     }
 
-    public class Card
+    public readonly struct Card
     {
         public CardSuit Suit { get; }
         public CardRank Rank { get; }

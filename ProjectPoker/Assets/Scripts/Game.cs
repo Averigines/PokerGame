@@ -1,5 +1,6 @@
 using Model;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class Game : MonoBehaviour
@@ -14,12 +15,45 @@ public class Game : MonoBehaviour
 
     // Testing
     private bool finishTestRuns = false;
+    private int handsToPlay = 100;
     private int handsPlayed = 0;
+    private int playersForTest = 8;
+    private Dictionary<HandType, int> handRankCounts;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        RunTestHand(9);
+        // Testing
+        handRankCounts = new()
+        {
+            {HandType.HighCard, 0},
+            {HandType.Pair, 0},
+            {HandType.TwoPair, 0},
+            {HandType.Trips, 0},
+            {HandType.Straight, 0},
+            {HandType.Flush, 0},
+            {HandType.FullHouse, 0},
+            {HandType.Quads, 0},
+            {HandType.StraightFlush, 0},
+        };
+        for (int i = 1; i <= handsToPlay; i++)
+        {
+            RunTestHand(playersForTest);
+            foreach (Player player in players)
+            {
+                handRankCounts[player.HandRank.Type]++;
+            }
+        }
+
+        Debug.Log($"We had this many high cards on a total of {handsPlayed * playersForTest} hands: {handRankCounts[HandType.HighCard]}");
+        Debug.Log($"We had this many pairs on a total of {handsPlayed * playersForTest} hands: {handRankCounts[HandType.Pair]}");
+        Debug.Log($"We had this many two pairs on a total of {handsPlayed * playersForTest} hands: {handRankCounts[HandType.TwoPair]}");
+        Debug.Log($"We had this many trips on a total of {handsPlayed * playersForTest} hands: {handRankCounts[HandType.Trips]}");
+        Debug.Log($"We had this many straights on a total of {handsPlayed * playersForTest} hands: {handRankCounts[HandType.Straight]}");
+        Debug.Log($"We had this many flushes on a total of {handsPlayed * playersForTest} hands: {handRankCounts[HandType.Flush]}");
+        Debug.Log($"We had this many full houses on a total of {handsPlayed * playersForTest} hands: {handRankCounts[HandType.FullHouse]}");
+        Debug.Log($"We had this many quads on a total of {handsPlayed * playersForTest} hands: {handRankCounts[HandType.Quads]}");
+        Debug.Log($"We had this many straight flushes on a total of {handsPlayed * playersForTest} hands: {handRankCounts[HandType.StraightFlush]}");
     }
 
     // Update is called once per frame
@@ -39,19 +73,8 @@ public class Game : MonoBehaviour
             combinedCards.AddRange(board);
             player.AddHandRank(HandEvaluator.EvaluateHand(combinedCards));
 
-            //Testing
-
-            if (player.HandRank.Type == HandType.Quads)
-            {
-                Debug.Log($"Player {player.Name} has Quads.");
-                Debug.Log($"{handsPlayed} hands were played.");
-                finishTestRuns = true;
-            }
+            Debug.Log($"Player {player.Name} has {player.HandRank.Type} with those cards: {string.Join(", ", player.HandRank.HighCards)}");
         }
-        if (!finishTestRuns)
-        {
-            RunTestHand(9);
-        } 
     }
 
     private void RunTestHand(int numPlayers)
@@ -73,18 +96,18 @@ public class Game : MonoBehaviour
         {
             card = deck.Draw();
             player.AddHoleCard(card);
-            Debug.Log($"Player {player.Name} got card {card}");
+            // Debug.Log($"Player {player.Name} got card {card}");
         }
         foreach (Player player in players)
         {
             card = deck.Draw();
             player.AddHoleCard(card);
-            Debug.Log($"Player {player.Name} got card {card}");
+            // Debug.Log($"Player {player.Name} got card {card}");
         }
 
         // Burn card
         card = deck.Draw();
-        Debug.Log($"First Burn card: {card}");
+        // Debug.Log($"First Burn card: {card}");
 
         // Give Flop
         for (int i = 0; i < 3; i++)
@@ -92,31 +115,31 @@ public class Game : MonoBehaviour
             card = deck.Draw();
             board.Add(card);
         }
-        Debug.Log($"Flop is {string.Join(", ", board)}");
+        // Debug.Log($"Flop is {string.Join(", ", board)}");
 
         // Burn card
         card = deck.Draw();
-        Debug.Log($"Second Burn card: {card}");
+        // Debug.Log($"Second Burn card: {card}");
 
         // Give Turn
         card = deck.Draw();
         board.Add(card);
-        Debug.Log($"Turn is {card}");
+        // Debug.Log($"Turn is {card}");
 
         // Burn card
         card = deck.Draw();
-        Debug.Log($"Third Burn card: {card}");
+        // Debug.Log($"Third Burn card: {card}");
 
         // Give River
         card = deck.Draw();
         board.Add(card);
-        Debug.Log($"River is {card}");
+        // Debug.Log($"River is {card}");
 
-        Debug.Log($"Board is {string.Join(", ", board)}");
         foreach (Player player in players)
         {
             Debug.Log($"{player.Name}'s hole cards are {string.Join(", ", player.HoleCards)}");
         }
+        Debug.Log($"Board is {string.Join(", ", board)}");
 
         handsPlayed++;
         DetermineHands();
