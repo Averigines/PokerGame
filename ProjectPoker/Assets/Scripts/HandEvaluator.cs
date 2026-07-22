@@ -333,4 +333,9 @@ public static class HandEvaluator
         }
         return false;
     }
+
+    public static Player DetermineWinner(List<Player> players)
+    {
+        return null;
+    }
 }

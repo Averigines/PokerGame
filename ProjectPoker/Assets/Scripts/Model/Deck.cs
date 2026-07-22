@@ -8,7 +8,7 @@ namespace Model
     public class Deck
     {
         private readonly System.Random rnd = new();
-        private readonly List<Card> Cards;
+        private List<Card> Cards;
 
         public Deck()
         {
@@ -28,6 +28,11 @@ namespace Model
 
             // Debug.Log($"Created a deck with {cards.Count} cards in this order:\n{string.Join("\n", cards)}");
             return cards;
+        }
+
+        public void Reset()
+        {
+            Cards = Create();
         }
 
         public void Shuffle()
@@ -50,6 +55,11 @@ namespace Model
             // Debug.Log($"Drew the top card of the deck: {card}");
             Cards.RemoveAt(0);
             return card;
+        }
+
+        public List<Card> GetCards()
+        {
+            return Cards;
         }
     }
 }

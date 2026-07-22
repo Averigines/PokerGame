@@ -1,3 +1,4 @@
+using Assets.Scripts.Model;
 using Model;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -5,19 +6,24 @@ using UnityEngine;
 
 public class Game : MonoBehaviour
 {
+    private Table table;
     private Deck deck;
     private Card card;
     private List<Player> players;
     private List<Card> board;
 
-    [SerializeField]
-    private List<string> playerNames;
+    [SerializeField] private List<string> playerNames;
+    [SerializeField] private CardLibrary cardLibrary;
+    [SerializeField] private CardViewer cardViewer;
+
+
 
     // Testing
     private bool finishTestRuns = false;
-    private int handsToPlay = 100;
+    [SerializeField] private int handsToPlay = 1;
     private int handsPlayed = 0;
-    private int playersForTest = 8;
+    [SerializeField] private int seats = 1;
+    [SerializeField] private int playersForTest = 1;
     private Dictionary<HandType, int> handRankCounts;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -36,13 +42,26 @@ public class Game : MonoBehaviour
             {HandType.Quads, 0},
             {HandType.StraightFlush, 0},
         };
+
+        players = new();
+        for (int i = 0; i < playersForTest; i++)
+        {
+            players.Add(new Player(playerNames[i]));
+        }
+
+        table = new Table(seats, players);
+        cardViewer.InitializeTableSetup(table.Seats);
+        deck = new Deck();
+        cardLibrary.PopulateCardSprites(deck.GetCards());
         for (int i = 1; i <= handsToPlay; i++)
         {
-            RunTestHand(playersForTest);
+            RunTestHand();
             foreach (Player player in players)
             {
                 handRankCounts[player.HandRank.Type]++;
+                player.RemoveHoleCards();
             }
+            deck.Reset();
         }
 
         Debug.Log($"We had this many high cards on a total of {handsPlayed * playersForTest} hands: {handRankCounts[HandType.HighCard]}");
@@ -75,33 +94,30 @@ public class Game : MonoBehaviour
 
             Debug.Log($"Player {player.Name} has {player.HandRank.Type} with those cards: {string.Join(", ", player.HandRank.HighCards)}");
         }
+
+        HandEvaluator.DetermineWinner(players);
     }
 
-    private void RunTestHand(int numPlayers)
+    private void RunTestHand()
     {
-        deck = new Deck();
         deck.Shuffle();
-        players = new();
         board = new();
 
-        for (int i = 0; i < numPlayers; i++)
-        {
-            players.Add(new Player(playerNames[i]));
-        }
-
-        Debug.Log($"Starting Test Run with {numPlayers} players.");
+        Debug.Log($"Starting Test Run with {playersForTest} players.");
 
         // Give each player two cards
         foreach (Player player in players)
         {
             card = deck.Draw();
             player.AddHoleCard(card);
+            cardViewer.DisplayPlayerCard(card, table.Players[player], 1);
             // Debug.Log($"Player {player.Name} got card {card}");
         }
         foreach (Player player in players)
         {
             card = deck.Draw();
             player.AddHoleCard(card);
+            cardViewer.DisplayPlayerCard(card, table.Players[player], 2);
             // Debug.Log($"Player {player.Name} got card {card}");
         }
 
@@ -110,10 +126,11 @@ public class Game : MonoBehaviour
         // Debug.Log($"First Burn card: {card}");
 
         // Give Flop
-        for (int i = 0; i < 3; i++)
+        for (int i = 1; i <= 3; i++)
         {
             card = deck.Draw();
             board.Add(card);
+            cardViewer.DisplayBoardCard(card, i);
         }
         // Debug.Log($"Flop is {string.Join(", ", board)}");
 
@@ -124,6 +141,7 @@ public class Game : MonoBehaviour
         // Give Turn
         card = deck.Draw();
         board.Add(card);
+        cardViewer.DisplayBoardCard(card, 4);
         // Debug.Log($"Turn is {card}");
 
         // Burn card
@@ -133,6 +151,7 @@ public class Game : MonoBehaviour
         // Give River
         card = deck.Draw();
         board.Add(card);
+        cardViewer.DisplayBoardCard(card, 5);
         // Debug.Log($"River is {card}");
 
         foreach (Player player in players)
