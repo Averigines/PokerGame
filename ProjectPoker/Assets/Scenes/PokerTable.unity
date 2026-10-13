@@ -575,8 +575,9 @@ MonoBehaviour:
   - Shiina Okamoto
   - Michael Mizrachi
   - Fedor Holz
-  cardViewer: {fileID: 1842845573}
   seats: 3
+  game: 1
+  cardViewer: {fileID: 1842845573}
 --- !u!4 &1592900266
 Transform:
   m_ObjectHideFlags: 0
@@ -721,3 +722,4 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 1592900266}
   - {fileID: 1842845572}
+  - {fileID: 363777894}

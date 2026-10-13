@@ -21,8 +21,8 @@ namespace Model
             foreach (Player player in table.Players.Keys)
                 holeCards.Add(player, new List<Card>());
 
-            // Deal one card to every player before dealing the second card.
-            for (int card = 0; card < 2; card++)
+            // Deal one card to every player on each pass.
+            for (int card = 0; card < table.HoleCardCount; card++)
                 foreach (List<Card> hand in holeCards.Values)
                     hand.Add(deck.Draw());
 
@@ -37,9 +37,14 @@ namespace Model
             var hands = new List<PlayerHand>();
             foreach (var entry in holeCards)
             {
-                var combinedCards = new List<Card>(entry.Value);
-                combinedCards.AddRange(board);
-                hands.Add(new PlayerHand(entry.Key, entry.Value, HandEvaluator.EvaluateHand(combinedCards)));
+                HandRank rank;
+                if (table.Game == PokerGame.PotLimitOmaha)
+                    rank = HandEvaluator.EvaluateOmahaHand(entry.Value, board);
+                else
+                {
+                    rank = HandEvaluator.EvaluateHoldemHand(entry.Value, board);
+                }
+                hands.Add(new PlayerHand(entry.Key, entry.Value, rank));
             }
             return new RoundResult(board, hands);
         }
