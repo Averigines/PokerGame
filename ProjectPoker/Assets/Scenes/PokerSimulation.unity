@@ -28,7 +28,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afc2e24bcb15458bb6e1880b4300d78d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Poker.Debug::PokerSimulationRunner
+  m_EditorClassIdentifier: Assembly-CSharp::PokerSimulationRunner
   playerNames:
   - Martin Kabrhel
   - Daniel Negreanu

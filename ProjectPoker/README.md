@@ -9,8 +9,8 @@ Open this folder with Unity **6000.5.4f1**.
 
 ## Structure
 
-- `Assets/Scripts/Model`: plain C# cards, deck, players, seating, hand evaluation, and round results. Poker.Model disables Unity engine references.
-- `Assets/Scripts/Runtime`: Unity game controller and presentation. Poker.Runtime references the model and Unity UI.
+- `Assets/Scripts/Model`: plain C# cards, deck, players, seating, hand evaluation, and round results.
+- `Assets/Scripts/Runtime`: Unity game controller and presentation.
 - `Assets/Scripts/Debug`: editor-only simulation runner.
 - `Assets/Art/Cards`: source artwork, imported sprites, and the CardSprites asset. The asset retains the original 52 serialized suit/rank/sprite assignments and builds its lookup directly from them.
 - `Assets/Prefabs/UI`: card, player-hand, and board prefabs.
@@ -33,4 +33,6 @@ The test project compiles all actual model sources without Unity or external tes
 
 URP, Unity UI, and Input System remain in use by the scene. Editor tooling and Unity's built-in modules remain installed. Unused inference, navigation, multiplayer-center, timeline, and visual-scripting packages have been removed from the manifest and unreachable lock entries removed. Unity may normalize the lock file on its next package resolution.
 
-Move Unity assets together with their `.meta` files to preserve GUID references. The model and runtime assembly names are Poker.Model and Poker.Runtime. Unity-generated projects are ignored; the handwritten regression project is explicitly included.
+Move Unity assets together with their `.meta` files to preserve GUID references. Scripts use Unity's default Assembly-CSharp assembly, so Visual Studio displays Model, Runtime, and Debug together under Assets/Scripts, matching the disk layout. PokerSimulationRunner is guarded by UNITY_EDITOR and excluded from player builds. The standalone regression project continues to verify that the model compiles without Unity references.
+
+After Unity imports script changes, use Edit > Preferences > External Tools > Regenerate project files if Visual Studio still displays the old Poker projects, then reopen the solution. Unity owns the generated solution and projects; the handwritten regression project is maintained separately.

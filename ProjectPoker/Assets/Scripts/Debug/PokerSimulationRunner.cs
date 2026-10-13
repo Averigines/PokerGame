@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,3 +25,4 @@ public sealed class PokerSimulationRunner : MonoBehaviour
             Debug.Log($"{count.Key}: {count.Value} of {handsToPlay * table.Players.Count} hands (seed {seed})");
     }
 }
+#endif

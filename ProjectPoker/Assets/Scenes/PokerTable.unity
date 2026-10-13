@@ -564,7 +564,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eb76921194e33a748aa8742b17ccafcb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Poker.Runtime::GameController
+  m_EditorClassIdentifier: Assembly-CSharp::GameController
   playerNames:
   - Martin Kabrhel
   - Daniel Negreanu
@@ -706,7 +706,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fc510e0ef41270b4aadca79ad8161a5f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Poker.Runtime::TableView
+  m_EditorClassIdentifier: Assembly-CSharp::TableView
   cardPrefab: {fileID: 3280469555195471354, guid: 9d214b8032caea8468621482319dc446, type: 3}
   boardPrefab: {fileID: 890977229826756520, guid: 042638ca787f7e344bfbd3f324b15fe5, type: 3}
   playerHandPrefab: {fileID: 4986965827504520425, guid: def3560229739aa45b6268a658efa53c, type: 3}
