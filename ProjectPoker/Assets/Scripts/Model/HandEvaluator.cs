@@ -6,340 +6,231 @@ namespace Model
 {
     public static class HandEvaluator
     {
-        public static HandRank EvaluateHand(List<Card> cards)
+        public static HandRank EvaluateHoldemHand(IReadOnlyList<Card> holeCards, IReadOnlyList<Card> board)
         {
-            if (cards == null) throw new ArgumentNullException(nameof(cards));
-            if (cards.Count < 5 || cards.Count > 7)
-                throw new ArgumentException("A poker hand must contain five to seven cards.", nameof(cards));
+            if (holeCards == null) throw new ArgumentNullException(nameof(holeCards));
+            if (board == null) throw new ArgumentNullException(nameof(board));
+            if (holeCards.Count != 2) throw new ArgumentException("Texas Hold'em requires two hole cards.", nameof(holeCards));
+            if (board.Count != 5) throw new ArgumentException("The board must contain five cards.", nameof(board));
+
             var seen = new HashSet<Card>();
-            foreach (Card card in cards)
-            {
+
+            foreach (Card card in holeCards
+                .Concat(board))
                 if (card.Rank < CardRank.Two || card.Rank > CardRank.Ace ||
                     card.Suit < CardSuit.Clubs || card.Suit > CardSuit.Hearts || !seen.Add(card))
-                    throw new ArgumentException("Cards must be valid and unique.", nameof(cards));
-            }
-            CardRank[] highCards = new CardRank[5];
+                    throw new ArgumentException("Cards must be valid and unique.");
 
-            cards = cards.OrderByDescending(card => card.Rank).ToList();
-
-            if (HasStraightFlush(cards, highCards))
-            {
-                return new HandRank(HandType.StraightFlush, highCards);
-            }
-            if (HasQuads(cards, highCards))
-            {
-                return new HandRank(HandType.Quads, highCards);
-            }
-            if (HasFullHouse(cards, highCards))
-            {
-                return new HandRank(HandType.FullHouse, highCards);
-            }
-            if (HasFlush(cards, highCards))
-            {
-                return new HandRank(HandType.Flush, highCards);
-            }
-            if (HasStraight(cards, highCards))
-            {
-                return new HandRank(HandType.Straight, highCards);
-            }
-            if (HasTrips(cards, highCards))
-            {
-                return new HandRank(HandType.Trips, highCards);
-            }
-            if (HasTwoPair(cards, highCards))
-            {
-                return new HandRank(HandType.TwoPair, highCards);
-            }
-            if (HasPair(cards, highCards))
-            {
-                return new HandRank(HandType.Pair, highCards);
-            }
-            highCards[0] = cards[0].Rank;
-            highCards[1] = cards[1].Rank;
-            highCards[2] = cards[2].Rank;
-            highCards[3] = cards[3].Rank;
-            highCards[4] = cards[4].Rank;
-            return new HandRank(HandType.HighCard, highCards);
+            var combinedCards = new List<Card>(holeCards
+                .Concat(board));
+            return EvaluateHand(combinedCards);
         }
 
-        private static bool HasStraightFlush(List<Card> cards, CardRank[] highCards)
+        public static HandRank EvaluateOmahaHand(IReadOnlyList<Card> holeCards, IReadOnlyList<Card> board)
         {
-            foreach (CardSuit suit in Enum.GetValues(typeof(CardSuit)))
-            {
-                CardRank lowestInChain = CardRank.None;
+            if (holeCards == null) throw new ArgumentNullException(nameof(holeCards));
+            if (board == null) throw new ArgumentNullException(nameof(board));
+            if (holeCards.Count != 4) throw new ArgumentException("Omaha requires four hole cards.", nameof(holeCards));
+            if (board.Count != 5) throw new ArgumentException("The board must contain five cards.", nameof(board));
 
-                List <CardRank> ranks = cards
-                    .Where(card => card.Suit == suit)
-                    .Select(card => card.Rank)
-                    .ToList();
+            var seen = new HashSet<Card>();
 
-                if (ranks.Count < 5) continue;
+            foreach (Card card in holeCards
+                .Concat(board))
+                if (card.Rank < CardRank.Two || card.Rank > CardRank.Ace ||
+                    card.Suit < CardSuit.Clubs || card.Suit > CardSuit.Hearts || !seen.Add(card))
+                    throw new ArgumentException("Cards must be valid and unique.");
 
-                int chain = 1;
+            HandRank best = null;
 
-                for (int i = 1; i < ranks.Count; i++)
-                {
-                    if (ranks[i] + 1 == ranks[i - 1])
-                    {
-                        chain++;
+            for (int h1 = 0; h1 < holeCards.Count - 1; h1++)
+                for (int h2 = h1 + 1; h2 < holeCards.Count; h2++)
+                    for (int b1 = 0; b1 < board.Count - 2; b1++)
+                        for (int b2 = b1 + 1; b2 < board.Count - 1; b2++)
+                            for (int b3 = b2 + 1; b3 < board.Count; b3++)
+                            {
+                                HandRank candidate = EvaluateHand(new List<Card>
+                                {
+                                    holeCards[h1], holeCards[h2], board[b1], board[b2], board[b3]
+                                });
 
-                        if (chain == 5)
-                        {
-                            lowestInChain = ranks[i];
-                            highCards[0] = lowestInChain + 4;
-                            highCards[1] = lowestInChain + 3;
-                            highCards[2] = lowestInChain + 2;
-                            highCards[3] = lowestInChain + 1;
-                            highCards[4] = lowestInChain;
-                            return true;
-                        }
-                    }
-                    else chain = 1;
-                }
+                                if (best == null || candidate.CompareTo(best) > 0) best = candidate;
+                            }
 
-                if (chain == 4 && ranks.Contains(CardRank.Ace) && ranks.Contains(CardRank.Two))
-                {
-                    highCards[0] = CardRank.Five;
-                    highCards[1] = CardRank.Four;
-                    highCards[2] = CardRank.Three;
-                    highCards[3] = CardRank.Two;
-                    highCards[4] = CardRank.Ace;
-                    return true;
-                }
-            }
-            return false;
+            return best;
         }
 
-        private static bool HasQuads(List<Card> cards, CardRank[] highCards)
+        private static HandRank EvaluateHand(List<Card> cards)
         {
-            int sameRank = 1;
+            cards = cards
+                .OrderByDescending(card => card.Rank)
+                .ToList();
 
-            for (int i = 1; i < cards.Count; i++)
-            {
-                if (cards[i].Rank == cards[i - 1].Rank)
-                {
-                    sameRank++;
-                    if (sameRank == 4)
-                    {
-                        CardRank quadRank = cards[i].Rank;
-                        CardRank kicker = cards
-                            .First(card => card.Rank != quadRank)
-                            .Rank;
+            List<Card> qualifyingCards;
 
-                        highCards[0] = quadRank;
-                        highCards[1] = quadRank;
-                        highCards[2] = quadRank;
-                        highCards[3] = quadRank;
-                        highCards[4] = kicker;
-                        return true;
-                    }
-                }
-                else sameRank = 1;
-            }
-            return false;
+            qualifyingCards = FindStraightFlush(cards);
+            if (qualifyingCards != null) return new HandRank(HandType.StraightFlush, qualifyingCards);
+
+            qualifyingCards = FindQuads(cards);
+            if (qualifyingCards != null) return new HandRank(HandType.Quads, qualifyingCards);
+
+            qualifyingCards = FindFullHouse(cards);
+            if (qualifyingCards != null) return new HandRank(HandType.FullHouse, qualifyingCards);
+
+            qualifyingCards = FindFlush(cards);
+            if (qualifyingCards != null) return new HandRank(HandType.Flush, qualifyingCards);
+
+            qualifyingCards = FindStraight(cards);
+            if (qualifyingCards != null) return new HandRank(HandType.Straight, qualifyingCards);
+
+            qualifyingCards = FindTrips(cards);
+            if (qualifyingCards != null) return new HandRank(HandType.Trips, qualifyingCards);
+
+            qualifyingCards = FindTwoPair(cards);
+            if (qualifyingCards != null) return new HandRank(HandType.TwoPair, qualifyingCards);
+
+            qualifyingCards = FindPair(cards);
+            if (qualifyingCards != null) return new HandRank(HandType.Pair, qualifyingCards);
+
+            return new HandRank(HandType.HighCard, cards
+                .Take(5)
+                .ToList());
         }
 
-        private static bool HasFullHouse(List<Card> cards, CardRank[] highCards)
+        // Input is sorted by descending rank. Return five cards in tie-break order, or null.
+        private static List<Card> FindStraightFlush(List<Card> cards)
         {
-            int sameRank = 1;
-
-            CardRank tripsRank = CardRank.None;
-
-            // Find highest trips
-            for (int i = 1; i < cards.Count; i++)
+            foreach (var suit in cards
+                .GroupBy(card => card.Suit))
             {
-                if (cards[i].Rank == cards[i - 1].Rank)
-                {
-                    sameRank++;
-                    if (sameRank == 3)
-                    {
-                        tripsRank = cards[i].Rank;
-                        break;
-                    }
-                }
-                else sameRank = 1;
+                if (suit.Count() < 5) continue;
+
+                List<Card> straight = FindStraight(suit.ToList());
+                if (straight != null) return straight;
             }
 
-            // If no trips are present, full house is impossible, so return false immediately.
-            if (tripsRank == CardRank.None) return false;
-
-            // Find highest pair with different rank than prev. found trips.
-            for (int i = 1; i < cards.Count; i++)
-            {
-                if (cards[i].Rank == cards[i - 1].Rank && cards[i].Rank != tripsRank)
-                {
-                    CardRank pairRank = cards[i].Rank;
-                    highCards[0] = tripsRank;
-                    highCards[1] = tripsRank;
-                    highCards[2] = tripsRank;
-                    highCards[3] = pairRank;
-                    highCards[4] = pairRank;
-                    return true;
-                }
-            }
-            return false;
+            return null;
         }
 
-        private static bool HasFlush(List<Card> cards, CardRank[] highCards)
+        private static List<Card> FindQuads(List<Card> cards)
         {
-            foreach (CardSuit suit in Enum.GetValues(typeof(CardSuit)))
-            {
-                List<CardRank> ranks = cards
-                    .Where(card => card.Suit == suit)
-                    .Select(card => card.Rank)
-                    .ToList();
+            var quads = cards
+                .GroupBy(card => card.Rank)
+                .FirstOrDefault(group => group.Count() == 4);
+            if (quads == null) return null;
 
-                if (ranks.Count < 5) continue;
-
-                highCards[0] = ranks[0];
-                highCards[1] = ranks[1];
-                highCards[2] = ranks[2];
-                highCards[3] = ranks[3];
-                highCards[4] = ranks[4];
-                return true;
-            }
-            return false;
+            return quads
+                .Concat(cards
+                    .Where(card => card.Rank != quads.Key)
+                    .Take(1))
+                .ToList();
         }
 
-        private static bool HasStraight(List<Card> cards, CardRank[] highCards)
+        private static List<Card> FindFullHouse(List<Card> cards)
         {
-            int chain = 1;
+            var groups = cards
+                .GroupBy(card => card.Rank)
+                .ToList();
+            var trips = groups
+                .FirstOrDefault(group => group.Count() >= 3);
+            if (trips == null) return null;
 
-            // Check if we have five continous cards where the cardrank is 1 lower than the previous card
-            for (int i = 1; i < cards.Count; i++)
-            {
-                if (cards[i].Rank + 1 == cards[i - 1].Rank)
-                {
-                    chain++;
-                    if (chain == 5)
-                    {
-                        CardRank lowestInChain = cards[i].Rank;
-                        highCards[0] = lowestInChain + 4;
-                        highCards[1] = lowestInChain + 3;
-                        highCards[2] = lowestInChain + 2;
-                        highCards[3] = lowestInChain + 1;
-                        highCards[4] = lowestInChain;
-                        return true;
-                    }
-                }
-                else if (cards[i].Rank != cards[i - 1].Rank) chain = 1;
-            }
+            var pair = groups
+                .FirstOrDefault(group => group.Key != trips.Key && group.Count() >= 2);
+            if (pair == null) return null;
 
-            // If we now have a chain of 4, we need to consider the low ace since ace only counts as high card in the cardrank enum.
-            if (chain == 4 && cards[0].Rank == CardRank.Ace && cards[^1].Rank == CardRank.Two)
-            {
-                // In this case, we know the straight is 5-4-3-2-A, so we can hardcode the cardranks
-                highCards[0] = CardRank.Five;
-                highCards[1] = CardRank.Four;
-                highCards[2] = CardRank.Three;
-                highCards[3] = CardRank.Two;
-                highCards[4] = CardRank.Ace;
-                return true;
-            }
-            return false;
+            return trips
+                .Take(3)
+                .Concat(pair
+                    .Take(2))
+                .ToList();
         }
 
-        private static bool HasTrips(List<Card> cards, CardRank[] highCards)
+        private static List<Card> FindFlush(List<Card> cards)
         {
-            int sameRank = 1;
+            var suit = cards
+                .GroupBy(card => card.Suit)
+                .FirstOrDefault(group => group.Count() >= 5);
 
-            // Find highest trips
-            for (int i = 1; i < cards.Count; i++)
-            {
-                if (cards[i].Rank == cards[i - 1].Rank)
-                {
-                    sameRank++;
-                    if (sameRank == 3)
-                    {
-                        CardRank tripsRank = cards[i].Rank;
-                        CardRank kicker1 = cards
-                            .First(card => card.Rank != tripsRank)
-                            .Rank;
-                        CardRank kicker2 = cards
-                            .Where(card => card.Rank != tripsRank)
-                            .Skip(1)
-                            .First()
-                            .Rank;
-                        highCards[0] = tripsRank;
-                        highCards[1] = tripsRank;
-                        highCards[2] = tripsRank;
-                        highCards[3] = kicker1;
-                        highCards[4] = kicker2;
-                        return true;
-                    }
-                }
-                else sameRank = 1;
-            }
-            return false;
+            return suit?
+                .Take(5)
+                .ToList();
         }
 
-        private static bool HasTwoPair(List<Card> cards, CardRank[] highCards)
+        private static List<Card> FindStraight(List<Card> cards)
         {
-            CardRank firstPairRank = CardRank.None;
+            // Keep one actual card per rank so duplicate ranks cannot interrupt a straight.
+            List<Card> distinct = cards
+                .GroupBy(card => card.Rank)
+                .Select(group => group.First())
+                .ToList();
+            var chain = new List<Card>();
 
-            // Find highest pair
-            for (int i = 1; i < cards.Count; i++)
+            foreach (Card card in distinct)
             {
-                if (cards[i].Rank == cards[i - 1].Rank)
-                {
-                    firstPairRank = cards[i].Rank;
-                    break;
-                }
+                if (chain.Count > 0 && chain[chain.Count - 1].Rank != card.Rank + 1) chain.Clear();
+                chain.Add(card);
+                if (chain.Count == 5) return chain;
             }
 
-            // If no pair is present, two pair is impossible, so return false immediately.
-            if (firstPairRank == CardRank.None) return false;
-
-            // Find highest pair with different rank than prev. found pair.
-            for (int i = 1; i < cards.Count; i++)
+            // An ace-low straight places its ace last for rank comparison.
+            if (chain.Count == 4 && chain[0].Rank == CardRank.Five &&
+                distinct[0].Rank == CardRank.Ace)
             {
-                if (cards[i].Rank == cards[i - 1].Rank && cards[i].Rank != firstPairRank)
-                {
-                    CardRank secondPairRank = cards[i].Rank;
-                    CardRank kicker = cards
-                        .First(card => card.Rank != firstPairRank && card.Rank != secondPairRank)
-                        .Rank;
-                    highCards[0] = firstPairRank;
-                    highCards[1] = firstPairRank;
-                    highCards[2] = secondPairRank;
-                    highCards[3] = secondPairRank;
-                    highCards[4] = kicker;
-                    return true;
-                }
+                chain.Add(distinct[0]);
+                return chain;
             }
-            return false;
+
+            return null;
         }
 
-        private static bool HasPair(List<Card> cards, CardRank[] highCards)
+        private static List<Card> FindTrips(List<Card> cards)
         {
-            // Find highest pair
-            for (int i = 1; i < cards.Count; i++)
-            {
-                if (cards[i].Rank == cards[i - 1].Rank)
-                {
-                    CardRank pairRank = cards[i].Rank;
-                    CardRank kicker1 = cards
-                        .First(card => card.Rank != pairRank)
-                        .Rank;
-                    CardRank kicker2 = cards
-                        .Where(card => card.Rank != pairRank)
-                        .Skip(1)
-                        .First()
-                        .Rank;
-                    CardRank kicker3 = cards
-                        .Where(card => card.Rank != pairRank)
-                        .Skip(2)
-                        .First()
-                        .Rank;
-                    highCards[0] = pairRank;
-                    highCards[1] = pairRank;
-                    highCards[2] = kicker1;
-                    highCards[3] = kicker2;
-                    highCards[4] = kicker3;
-                    return true;
-                }
-            }
-            return false;
+            var trips = cards
+                .GroupBy(card => card.Rank)
+                .FirstOrDefault(group => group.Count() >= 3);
+            if (trips == null) return null;
+
+            return trips
+                .Take(3)
+                .Concat(cards
+                    .Where(card => card.Rank != trips.Key)
+                    .Take(2))
+                .ToList();
+        }
+
+        private static List<Card> FindTwoPair(List<Card> cards)
+        {
+            var pairs = cards
+                .GroupBy(card => card.Rank)
+                .Where(group => group.Count() >= 2)
+                .Take(2)
+                .ToList();
+            if (pairs.Count < 2) return null;
+
+            return pairs[0]
+                .Take(2)
+                .Concat(pairs[1]
+                    .Take(2))
+                .Concat(cards
+                    .Where(card => card.Rank != pairs[0].Key && card.Rank != pairs[1].Key)
+                    .Take(1))
+                .ToList();
+        }
+
+        private static List<Card> FindPair(List<Card> cards)
+        {
+            var pair = cards
+                .GroupBy(card => card.Rank)
+                .FirstOrDefault(group => group.Count() >= 2);
+            if (pair == null) return null;
+
+            return pair
+                .Take(2)
+                .Concat(cards
+                    .Where(card => card.Rank != pair.Key)
+                    .Take(3))
+                .ToList();
         }
 
         public static PlayerHand DetermineWinner(IReadOnlyList<PlayerHand> hands)
@@ -353,14 +244,16 @@ namespace Model
         {
             if (hands == null) throw new ArgumentNullException(nameof(hands));
             var winners = new List<PlayerHand>();
+
             foreach (PlayerHand hand in hands)
             {
-                if (hand == null)
-                    throw new ArgumentException("Every entry must contain an evaluated hand.", nameof(hands));
+                if (hand == null) throw new ArgumentException("Every entry must contain an evaluated hand.", nameof(hands));
+
                 int comparison = winners.Count == 0 ? 1 : hand.Rank.CompareTo(winners[0].Rank);
                 if (comparison > 0) winners.Clear();
                 if (comparison >= 0) winners.Add(hand);
             }
+
             return winners;
         }
     }

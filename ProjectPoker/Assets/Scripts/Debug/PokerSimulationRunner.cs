@@ -9,13 +9,14 @@ public sealed class PokerSimulationRunner : MonoBehaviour
 {
     [SerializeField] private List<string> playerNames;
     [SerializeField] private int seats = 3;
+    [SerializeField] private PokerGame game = PokerGame.TexasHoldem;
     [SerializeField] private int handsToPlay = 1000;
     [SerializeField] private int seed = 1;
 
     private void Start()
     {
         if (handsToPlay < 1) throw new ArgumentOutOfRangeException(nameof(handsToPlay));
-        var table = new Table(seats, playerNames.Select(name => new Player(name)).ToList());
+        var table = new Table(seats, playerNames.Select(name => new Player(name)).ToList(), game);
         var round = new PokerRound(new Deck(new System.Random(seed)));
         var counts = Enum.GetValues(typeof(HandType)).Cast<HandType>().ToDictionary(type => type, type => 0);
         for (int i = 0; i < handsToPlay; i++)

@@ -19,6 +19,8 @@ Open this folder with Unity **6000.5.4f1**.
 
 Player stores identity. PokerRound owns dealing and returns immutable snapshots of board cards, each player's hole cards and rank, and all tied winners. The view consumes those results. Previous results remain valid after another round.
 
+Choose TexasHoldem or PotLimitOmaha using the serialized Game field on GameController or PokerSimulationRunner. Table stores that selection for its lifetime. Hold'em remains the default. Omaha deals four hole cards and evaluates exactly two hole cards with exactly three board cards; the table view creates four card slots per seat. Both games currently deal directly to showdown. Pot-limit betting is deferred until betting, pots, and chip stacks are implemented.
+
 ## Tests
 
 Install the .NET 10 SDK, then run:

@@ -20,15 +20,16 @@ namespace Model
     public class HandRank : IComparable<HandRank>
     {
         public HandType Type { get; }
-        public IReadOnlyList<CardRank> HighCards { get; } // All 5 qualifying cards from most relevant to least relevant (e.g. 2 pair: Higher pair --> lower pair --> kicker)
+        // Five qualifying cards in tie-break order; an ace-low straight ends with the ace.
+        public IReadOnlyList<Card> Cards { get; }
 
-        public HandRank(HandType type, CardRank[] highCards)
+        public HandRank(HandType type, IList<Card> cards)
         {
-            if (highCards == null) throw new ArgumentNullException(nameof(highCards));
-            if (highCards.Length != 5)
-                throw new ArgumentException("Exactly five qualifying ranks are required.", nameof(highCards));
+            if (cards == null) throw new ArgumentNullException(nameof(cards));
+            if (cards.Count != 5)
+                throw new ArgumentException("Exactly five qualifying cards are required.", nameof(cards));
             Type = type;
-            HighCards = Array.AsReadOnly((CardRank[])highCards.Clone());
+            Cards = new List<Card>(cards).AsReadOnly();
         }
 
         public int CompareTo(HandRank other)
@@ -36,9 +37,9 @@ namespace Model
             if (other == null) return 1;
             int comparison = Type.CompareTo(other.Type);
             if (comparison != 0) return comparison;
-            for (int i = 0; i < HighCards.Count; i++)
+            for (int i = 0; i < Cards.Count; i++)
             {
-                comparison = HighCards[i].CompareTo(other.HighCards[i]);
+                comparison = Cards[i].Rank.CompareTo(other.Cards[i].Rank);
                 if (comparison != 0) return comparison;
             }
             return 0;
