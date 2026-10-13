@@ -13,7 +13,7 @@ public sealed class GameController : MonoBehaviour
 
     private void Start()
     {
-        table = new Table(seats, playerNames.Select(name => new Player(name)).ToList());
+        table = new Table(seats, playerNames.Take(seats).Select(name => new Player(name)).ToList());
         cardViewer.InitializeTableSetup(table.Seats);
         PlayRound();
     }

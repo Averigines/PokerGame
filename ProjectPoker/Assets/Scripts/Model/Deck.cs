@@ -10,7 +10,7 @@ namespace Model
         public IReadOnlyList<Card> Cards => cards.AsReadOnly();
 
         public Deck(Random random = null)
-        {
+        { 
             this.random = random ?? new Random();
             Reset();
         }
